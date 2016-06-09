@@ -1,0 +1,1 @@
+addpath('data','EventSequence', 'HMM', 'io', 'nnmf')
