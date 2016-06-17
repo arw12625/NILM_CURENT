@@ -1,13 +1,18 @@
 clc;
 clear all;
+close all;
 
-file = 'data/id86_jan.csv';
+file = 'data/id26_year.csv';
 
 
-param.lambda = .000001;
+param.lambda = .0001;
 param.pos = true;
 factor = @(sig, dic) mexLasso(sig, dic, param);
 
-trainingTest(file,factor, 0, 1, 0, 1);
+%trainingTest(file,factor, 1, 1440, 1, 5);
 
-%expectationTest(file,factor, 0, 1, 0, 1);
+expectationTest(file,factor, 1, 1440, 1, 1);
+
+%plotSignals(file, 1, 1000, 5);
+
+

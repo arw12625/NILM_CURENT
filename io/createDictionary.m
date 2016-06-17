@@ -1,57 +1,70 @@
 %create a dictionary from a csv
 %first two columns are always ignored in file
 %file is file path, dicStart is the day the dictionary starts
-%dicLength is the length of the dictionary in days (number of rows)
+%dicLength is the length of the dictionary (number of rows)
 %dicWidth is the number of lengths of data concatenated in the dictionary
 %exceptions is a list of names of data to ignore
 %addOffset adds the difference between total use and all subsignals to the dictionary
+%ignore is the number of columns to ignore in the table
 
-function [dictionary, dataNames] = createDictionary(file, dicStart, dicLength, dicWidth, exceptions, addOffset)
+function [dictionary, dataNames] = createDictionary(file, dicStart, dicLength, dicWidth, exceptions, addOffset, ignore)
 
 fid = fopen(file);
 pr = fgets(fid);
 names = strsplit(pr,',');
+names = cellfun(@strtrim ,names, 'UniformOutput',false);
 fclose(fid);
 
-dayTime = 24*60;
+start = dicStart;
+tableLen = length(names) - ignore;
 
-start = 1 + dicStart * dayTime;
-dataLen = dayTime * dicLength;
-
-tableLen = length(names) - 2;
-
-dicData = zeros(dataLen, tableLen, dicWidth);
+dicData = zeros(dicLength, tableLen, dicWidth);
 
 for i = 1:dicWidth
-    dicData(:, :,i) = csvread(file, start,2,...
-        [start,2,start + dataLen - 1,tableLen+1]);
-    start = start + dataLen;
+    dicData(:, :,i) = csvread(file, start,ignore,...
+        [start,ignore,start + dicLength - 1,tableLen-1+ignore]);
+    start = start + dicLength;
 end
 
 
 if addOffset
-    useIndex = findIndices({'"use"'}, names) - 2;
+    useIndex = findIndices({'"use"'}, names) - ignore;
     useSig = dicData(:,useIndex,:);
 end
 
-dataNames = setdiff(names(3:end), exceptions);
-indicesExceptions = findIndices(exceptions, names) - 2;
+dataNames = removeDiff(names(1+ignore:end), exceptions);
+indicesExceptions = findIndices(exceptions, names) - ignore;
 dicData(:,indicesExceptions,:)=[];
 
+numSignals = size(dicData, 2);
 
 if addOffset
-    len = size(dicData, 2);
-    newData = zeros(size(dicData, 1), size(dicData, 2)+1, size(dicData, 3));
+    numSignals = numSignals + 1;
+    newData = zeros(dicLength, numSignals, dicWidth);
     for i =1:dicWidth
-        offSig = useSig(:,i) - dicData(:,:,i) * ones(len,1);
+        offSig = useSig(:,i) - dicData(:,:,i) * ones(numSignals-1,1);
         newData(:, :,i) = [dicData(:, :,i), offSig];
     end
     dicData = newData;
     dataNames = [dataNames, '"offset"'];
+    
 end
 
-dictionary = reshape(dicData, [dataLen, size(dicData, 2)*dicWidth, 1]);
+dictionary = zeros(dicLength, numSignals * dicWidth);
 
+for i = 1:numSignals
+    dictionary(:,((i-1)*dicWidth +1):(i * dicWidth)) = dicData(:, i, :);
+end
 
 end
+
+function outList = removeDiff(inList, toRemove)
+outList = inList;
+for i = 1:length(toRemove)
+    outList(strcmp(outList, toRemove(i))) = [];
+end
+end
+
+
+
 

@@ -2,10 +2,10 @@ function [] = trainingTest(file, factor, signalStart, signalLen, dicStart, dicWi
 
 signal = loadSignal(file, {'"use"'}, signalStart, signalLen);
 
-[dictionary, dataNames] = createDictionary(file, dicStart, signalLen, dicWidth, {'"use"', '"gen"', '"grid"'}, false);
+[dictionary, dataNames] = createDictionary(file, dicStart, signalLen, dicWidth, {'"use"', '"gen"', '"grid"'},true, 2);
 
 %normalization is required for the omp algorithm
-[normSig, magSig] = normalize(signal);
+[normSig, magSig] = normalizeSig(signal);
 [normDic, magDic] = normalizeDic(dictionary);
 
 param.lambda = .000001;
@@ -23,10 +23,8 @@ ylabel('normalized usage');
 legend('reconstructed   ', 'original', 'Location', 'southoutside','Orientation','horizontal');
 title('reconstruction')
 
-
 renorm = magSig * alpha ./magDic';
 renorm(isnan(renorm)) = 0;
-renorm
 logical((abs(renorm - 1) > .1) .* (renorm ~= 0));
 sum(abs(dictionary * renorm - signal))/60
 

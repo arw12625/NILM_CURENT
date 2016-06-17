@@ -10,25 +10,23 @@ fclose(fid);
 
 signal = loadSignal(file, {'"use"'}, signalStart, signalLen);
 
-[dictionary, dataNames] = createDictionary('id26_jan.csv', dicStart, signalLen, dicWidth, {'"use"', '"gen"', '"grid"'}, true);
-[testDictionary, testNames] = createDictionary('id26_jan.csv', signalStart, signalLen, 1, {'"use"', '"gen"', '"grid"'}, true);
+[dictionary, dataNames] = createDictionary(file, dicStart, signalLen, dicWidth, {'"use"', '"gen"', '"grid"'}, true, 2);
+[testDictionary, testNames] = createDictionary(file, signalStart, signalLen, 1, {'"use"', '"gen"', '"grid"'}, true, 2);
 
-[normSig, magSig] = normalize(signal);
+[normSig, magSig] = normalizeSig(signal);
 [normDic, magDic] = normalizeDic(dictionary);
 
 %perform coding
-alpha = full(factor(signal, dictionary));
+alpha = full(factor(normSig, normDic));
 
-renorm = magSig * alpha ./magDic';
+renorm = alpha;
 renorm(isnan(renorm)) = 0;
 
 recon = zeros(size(testDictionary));
-for i = 1:size(testDictionary, 2)
-    for j = 1: dicWidth
-        recon(:,i) = recon(:, i) + alpha((j-1) * length(dataNames) + i) * dictionary(:,(j-1) * length(dataNames) + i);
-    end
+for i = 1:size(recon, 2)
+    tmp = ((i-1)*dicWidth + 1):(i*dicWidth);
+    recon(:, i) = normDic(:, tmp) * renorm(tmp) * magSig;
 end
-
 
 for i = 1 : size(testDictionary,2)
     figure(i+678)
@@ -37,6 +35,17 @@ for i = 1 : size(testDictionary,2)
     legend('reconstructed   ', 'original', 'Location', 'southoutside','Orientation','horizontal');
     title(dataNames(i));
 end
+
+
+figure(200)
+plot( normDic * alpha); hold on;
+plot(normSig);
+xlabel('time (min)');
+ylabel('usage');
+legend('reconstructed   ', 'original', 'Location', 'southoutside','Orientation','horizontal');
+title('reconstruction')
+
+sqrt(sum((normSig - normDic * alpha).^2))
 
 end
 

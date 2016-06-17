@@ -14,10 +14,10 @@ end
 
 mag = sqrt(sum(indic.^2, 1));
 
-nonzero = abs(mag) > threshold;
+indices = abs(mag) > threshold;
 
 dictionary = zeros(size(indic));
-dictionary(:,nonzero) = bsxfun(@rdivide, indic(:, nonzero), mag(:, nonzero));
+dictionary(:,indices) = bsxfun(@rdivide, indic(:, indices), mag(:, indices));
 
 
 end
