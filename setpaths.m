@@ -1,1 +1,1 @@
-addpath('data','EventSequence', 'HMM', 'io', 'nnmf', 'shift')
+addpath('data','EventSequence', 'HMM', 'io', 'nnmf', 'shift', 'ddsc')

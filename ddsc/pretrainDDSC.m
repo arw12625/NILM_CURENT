@@ -1,21 +1,37 @@
-function [ activeOut, baseOut ] = pretrainDDSC(signal, baseWidth)
+function [activeOut, dicOut] = pretrainDDSC(signal, sigWidth, dicWidth)
 
-[normBase, baseMag] = normalizeDic(baseIn);
-activeOut = zeros(size(activeIn));
-baseOut = zeros(size(baseIn));
+disp('pretrain');
+t = tic;
+%learn sparse dictionary from disaggregated signals
 
-dicParam.lambda = .0001;
-dicParam.pos = true;
-codeParam.lambda = .0001;
-codeParam.pos = true;
+[normSig, sigMag] = normalizeDic(signal);
+classNumber = size(normSig, 2) / sigWidth;
+activeOut = sparse(dicWidth*classNumber, sigWidth);
+dicOut = zeros(size(signal, 1), dicWidth*classNumber);
 
-for i = 1:size(normBase, 2)
-    index = ((i-1)*baseWidth+1):(i*baseWidth);
-    sig = signal(:, i);
-    baseOut(:,index) = mexTrainDL(sig, dicParam);
-    activeOut(index) = mexLasso(base, sig, codeParam);
+%dicParam.modeD = 0;
+dicParam.K = dicWidth;
+dicParam.lambda = 1;
+dicParam.mode = 0;
+dicParam.posAlpha = 1;
+dicParam.posD = 1;
+dicParam.iter = 300;
+
+%codeParam.L = 15;
+codeParam.mode = 0;
+codeParam.lambda = 1.1;
+codeParam.pos = 1;
+
+for i = 1:classNumber
+    sigInd = ((i-1)*sigWidth+1):(i*sigWidth);
+    dicInd = ((i-1)*dicWidth+1):(i*dicWidth);
+    dicOut(:,dicInd) = mexTrainDL(signal(:,sigInd), dicParam);
+    activeOut(dicInd, :) = mexLasso(normSig(:, sigInd), dicOut(:, dicInd), codeParam);
 end
+activeOut(activeOut < 0.0005) = 0;
+dicOut(dicOut<0) = 0;
 
+toc(t)
 
 end
 

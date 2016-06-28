@@ -8,7 +8,8 @@
 %ignore is the number of columns to ignore in the table
 
 function [dictionary, dataNames] = createDictionary(file, dicStart, dicLength, dicWidth, exceptions, addOffset, ignore)
-
+disp('load dic')
+t = tic;
 fid = fopen(file);
 pr = fgets(fid);
 names = strsplit(pr,',');
@@ -55,7 +56,7 @@ dictionary = zeros(dicLength, numSignals * dicWidth);
 for i = 1:numSignals
     dictionary(:,((i-1)*dicWidth +1):(i * dicWidth)) = dicData(:, i, :);
 end
-
+toc(t)
 end
 
 function outList = removeDiff(inList, toRemove)

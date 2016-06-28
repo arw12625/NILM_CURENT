@@ -11,8 +11,6 @@ factor = @(sig, dic) mexLasso(sig, dic, param);
 
 %trainingTest(file,factor, 1, 1440, 1, 5);
 
-expectationTest(file,factor, 1, 1440, 1, 1);
+%expectationTest(file,factor, 1, 1440, 1, 1);
 
 %plotSignals(file, 1, 1000, 5);
-
-

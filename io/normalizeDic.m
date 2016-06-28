@@ -4,9 +4,9 @@ function [ dictionary, mag ] = normalizeDic( indic, varargin)
 threshold = 0;
 switch nargin - 1 
     case 1
-        threshold = varargin(1);
+        threshold = cell2mat(varargin(1));
     case 0
-        threshold = 0.1;
+        threshold = realmin;
     otherwise
         error('wrong number of args for normalizeDic');
 end

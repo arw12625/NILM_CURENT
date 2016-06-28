@@ -1,15 +1,8 @@
 clc;
 close all;
-%{
-file = '/data/id26_year.csv';
-sig = loadSignal(file, {'"use"'}, 0, 7);
-[nsig, sigMag] = normalizeSig(sig);
-[dic, dataNames] = createDictionary(file, 0, 1, 1, {'"use"', '"gen"', '"grid"'}, true, 2);
-[ndic, dicMag] = normalizeDic(dic);
-%}
-
 
 %{
+%downsample example
 file = 'data/id26_year.csv';
 [dic, dataNames] = createDictionary(file, 0, 300, 1,{},false, 2);
 ddic = downSampleDic(dic, 15);
@@ -17,25 +10,43 @@ exportCSV('data/id26_down15.csv', dataNames, ddic);
 %}
 
 
-file = 'data/id26_down5.csv';
-sig = loadSignal(file, {'"use"'}, 1, 1440);
-[nsig, sigMag] = normalizeSig(sig);
-[dic, dataNames] = createDictionary(file, 1, 1440, 1, {'"use"', '"gen"', '"grid"'}, true, 0);
-[ndic, dicMag] = normalizeDic(dic);
+file = 'data/id26_down10.csv';
+dataLength = 144*1;
+dicStart = dataLength * 50 + 1;
+dicWidth =40;
+shiftLim = 15;
 
+[dic, dataNames] = createDictionary(file, dicStart, dataLength, dicWidth, {'"use"', '"gen"', '"grid"', '"oven2"', '"disposal1"', '"venthood1"'}, false, 0);
+ndic = normalizeDic(dic);
 
-coeff = shiftFactor(nsig, ndic);
-tmpp = zeros(size(dic, 1), 1);
-for i = 1:length(dataNames)
-    tmpCoeff = sparse(size(coeff,1), size(coeff, 2));
-    tmpCoeff(:, i) = coeff(:,i);
-    
-    figure(i+7427)
-    tmpp = tmpp + sigMag * shiftRecon(ndic, tmpCoeff);
-    plot(sigMag * shiftRecon(ndic, tmpCoeff)); hold on;
-    plot(dic(:,i));
-    legend('reconstructed   ', 'original', 'Location', 'southoutside','Orientation','horizontal');
-    title(dataNames(i));
+%sparsityList = [.03, .1, .7];
+%energyList = [ .01, .05, .1, .5];
+%.1, .1?
+sparsityList = [.1];
+energyList = [.1];
+
+numDays = 1;
+maxIter = 15;
+errorBar = .1;
+
+resultErrors = zeros(3, length(sparsityList), length(energyList), numDays);
+for day = 1:numDays
+    sigStart = dataLength * day + 1;
+    [disagg, ~] = createDictionary(file, sigStart, dataLength, 1, {'"use"', '"gen"', '"grid"', '"oven2"', '"disposal1"', '"venthood1"'}, false, 0);
+    agg = sum(disagg, 2);
+    fprintf('Day:  %d', day);
+    for i = 1:length(sparsityList)
+        for j = 1:length(energyList)
+            fprintf('.');
+            coeff = shiftFactor(sig, dic, length(dataNames), shiftLim, maxIter, errorBar, sparsityList(i), energyList(j), 12);
+            [reconAgg, reconDisagg, e1, e2, e3] = reconstructDisagg(ndic, coeff, agg, disagg, dicWidth);
+            resultErrors(:,i,j, day) = resultErrors(:,i,j, day) + [e1, e2, e3]';
+        end
+    end
+    fprintf('\n');
 end
-figure(32553253)
-plot(tmpp);
+resultErrors = shiftdim(resultErrors,1);
+
+%coeff = shiftFactor(sig, dic, length(dataNames), shiftLim, 15, 1, .1, .0007, 12);
+plotReconstructed(agg, reconAgg, disagg, reconDisagg, dataNames)
+
